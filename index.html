@@ -1,0 +1,105 @@
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        p#in-text{
+            font-size: 36;
+        }
+    </style>
+</head>
+
+<body>
+
+    <label for="languages">Choose a language:</label>
+    <select name="languages" id="languages">
+        <option value="en">English</option>
+        <option value="pt">Português</option>
+        <option value="es">Español</option>
+        <option value="fr">Français </option>
+        <option value="vi">Tiếng Việt</option>
+        <option value="ar">العربية الفصحى</option>
+        <option value="tr">Türkçe</option>
+        <option value="uk">українська мова</option>
+        <option value="id">Bahasa Indonesia</option>
+        <option value="ru">Русский язык</option>
+        <option value="cz">čeština</option>
+        <option value="dk">dansk</option>
+        <option value="de">Deutsch</option>
+        <option value="fa">فارسی</option>
+        <option value="he">עברית</option>
+        <option value="hr">hrvatski</option>
+        <option value="hu">magyar</option>
+        <option value="it">italiano</option>
+        <option value="ko">한국어 (sino)</option>
+        <option value="lt">lietuvių kalba</option>
+        <option value="lv">latviešu valoda</option>
+        <option value="nl">Nederlands</option>
+        <option value="no">norsk bokmå</option>
+        <option value="pl">polski</option>
+        <option value="sr">srpski </option>
+        <option value="zh">国语</option>
+        <option value="eo">Esperanto</option>
+        <option value="az">Азәрбајҹан дили</option>
+        <option value="enIndian">English (India)</option>
+    </select>
+    <br />
+    <label for="difficulty">Choose a difficulty:</label>
+    <select name="difficulty" id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+    </select>
+    <br /><br /><br />
+    <button id="refresh">Refresh</button><br /><br />
+    <p id="in-text"></p><br /><br />
+    
+
+    <audio id="audio-player" controls></audio>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            difficulty = "easy"
+            lang_code = "es"
+            phrases = []
+            refetch_phrases()
+
+            function refetch_phrases() {
+                document.querySelector("#audio-player").setAttribute('disabled', '');
+                fetch(`http://127.0.0.1:8000/phrases/${lang_code}/${difficulty}`)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        phrases = data
+                        new_phrase()
+                    });
+
+                
+            }
+
+            function new_phrase(){
+                random_phrase = phrases[Math.floor(Math.random()*phrases.length)];
+                document.getElementById("in-text").innerText = random_phrase
+                intext = document.getElementById("in-text").innerText
+                document.querySelector("#audio-player").src = `http://127.0.0.1:8000/tts/es/${btoa(intext)}.mp3`
+                document.querySelector("#audio-player").setAttribute('disabled', 'false');
+            }
+
+            document.getElementById("refresh").addEventListener("click", () => {
+                new_phrase()
+            });
+
+            document.getElementById("languages").addEventListener("change", () => {
+                selected_lang_option = document.getElementById("languages").value
+                refetch_phrases()
+            });
+
+
+            document.getElementById("difficulty").addEventListener("change", () => {
+                difficulty = document.getElementById("difficulty").value
+                refetch_phrases()
+            });
+
+        });
+    </script>
+</body>
+
+</html>
