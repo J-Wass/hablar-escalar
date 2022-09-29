@@ -3,7 +3,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        p#in-text{
+        p#in-text {
             font-size: 36;
         }
     </style>
@@ -47,40 +47,62 @@
     <label for="difficulty">Choose a difficulty:</label>
     <select name="difficulty" id="difficulty">
         <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
         <option value="hard">Hard</option>
-    </select>
-    <br /><br /><br />
+    </select><br />
+    <hr /><br />
     <button id="refresh">Refresh</button><br /><br />
     <p id="in-text"></p><br /><br />
-    
 
-    <audio id="audio-player" controls></audio>
+
+    <audio id="audio-player" controls crossorigin="anonymous"></audio>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            difficulty = "easy"
-            lang_code = "es"
+            // Load from localstorage all the necessary settings from last session.
+            difficulty = localStorage.getItem('difficulty');
+            lang_code = localStorage.getItem('language');
+            document.getElementById('difficulty').value = difficulty;
+            document.getElementById('languages').value = lang_code;
+
+            // Load up phrases from backend.
             phrases = []
             refetch_phrases()
 
+            // Fetches the phrasebook from backend, based on language & difficulty.
             function refetch_phrases() {
                 document.querySelector("#audio-player").setAttribute('disabled', '');
+                console.log(`fetching ${lang_code}/${difficulty}`)
                 fetch(`http://127.0.0.1:8000/phrases/${lang_code}/${difficulty}`)
                     .then((response) => response.json())
                     .then((data) => {
                         phrases = data
                         new_phrase()
                     });
-
-                
             }
 
-            function new_phrase(){
-                random_phrase = phrases[Math.floor(Math.random()*phrases.length)];
+            // Pulls a random phrase out of the locally-stored phrasebook and asks the backend for an .mp3 of it.
+            function new_phrase() {
+                random_phrase = phrases[Math.floor(Math.random() * phrases.length)];
                 document.getElementById("in-text").innerText = random_phrase
                 intext = document.getElementById("in-text").innerText
-                document.querySelector("#audio-player").src = `http://127.0.0.1:8000/tts/es/${btoa(intext)}.mp3`
-                document.querySelector("#audio-player").setAttribute('disabled', 'false');
+
+                function set_src(body){
+                    document.querySelector("#audio-player").src = `data:audio/mp3;base64,${body}`
+                    document.querySelector("#audio-player").setAttribute('disabled', 'false')
+                }
+
+
+                // Either get mp3 from localstorage cache, or fetch from backend.
+                if (localStorage.getItem(intext) !== null){
+                    set_src(localStorage.getItem(intext))
+                }
+                else{
+                    fetch(`http://127.0.0.1:8000/tts/es/${btoa(intext)}`)
+                    .then((response) => response.text())
+                    .then((body) => {
+                        localStorage.setItem(intext, body)
+                        set_src(body)
+                })
+                }
             }
 
             document.getElementById("refresh").addEventListener("click", () => {
@@ -88,13 +110,15 @@
             });
 
             document.getElementById("languages").addEventListener("change", () => {
-                selected_lang_option = document.getElementById("languages").value
+                lang_code = document.getElementById("languages").value
+                localStorage.setItem('language', lang_code);
                 refetch_phrases()
             });
 
 
             document.getElementById("difficulty").addEventListener("change", () => {
                 difficulty = document.getElementById("difficulty").value
+                localStorage.setItem('difficulty', difficulty);
                 refetch_phrases()
             });
 
